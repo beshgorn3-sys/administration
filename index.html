@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>نظام إدارة المدرسة</title>
+<meta name="description" content="نظام إدارة مدرسة متكامل: الطلاب، الصفوف، المواد، الحضور، الدرجات، والتقارير — مرتبط بقاعدة بيانات Supabase.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="إدارة المدرسة">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  /* إخفاء الواجهة قبل الدخول — يُزال كلاس app-hidden برمجياً بعد نجاح الدخول */
+  body.app-hidden header,
+  body.app-hidden nav,
+  body.app-hidden main { visibility: hidden; }
+</style>
+</head>
+<body class="app-hidden">
+
+<!-- ==================== الترويسة ==================== -->
+<header>
+  <div class="head-row">
+    <div class="brand">
+      <div class="logo">🏫</div>
+      <div>
+        <h1 id="appTitle">نظام إدارة المدرسة</h1>
+        <p>الطلاب • الصفوف • المواد • الحضور • الدرجات</p>
+      </div>
+    </div>
+    <div class="head-actions">
+      <div id="syncLabel"></div>
+      <div id="userBox"></div>
+      <button id="themeBtn" title="تبديل المظهر">🌙</button>
+      <button id="installBtn" style="display:none">⬇ تثبيت</button>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== التنقل ==================== -->
+<nav id="nav">
+  <button data-tab="dashboard" class="active">📊 لوحة التحكم</button>
+  <button data-tab="students">👨‍🎓 الطلاب</button>
+  <button data-tab="classes">🏫 الصفوف</button>
+  <button data-tab="subjects">📚 المواد</button>
+  <button data-tab="attendance">📅 الحضور</button>
+  <button data-tab="grades">📝 الدرجات</button>
+  <button data-tab="reports">🧾 التقارير</button>
+  <button data-tab="users">👥 المستخدمون</button>
+  <button data-tab="settings">⚙️ الإعدادات</button>
+  <a class="navlink" href="about.html">من نحن</a>
+</nav>
+
+<main>
+
+  <!-- ==================== لوحة التحكم ==================== -->
+  <section class="panel show" id="sec-dashboard">
+    <h2>لوحة التحكم</h2>
+    <p class="panel-desc">نظرة سريعة على أداء المدرسة — تُحدَّث تلقائياً مع كل تغيير.</p>
+    <div class="stats-grid" id="dashStats"></div>
+    <div class="dash-grid">
+      <div class="card"><h3>توزيع التقديرات</h3><div id="dashGrades"></div></div>
+      <div class="card"><h3>مؤشرات الصفوف</h3><div id="dashClasses"></div></div>
+      <div class="card"><h3>حالة المزامنة</h3><div id="dashSync"></div></div>
+    </div>
+  </section>
+
+  <!-- ==================== الطلاب ==================== -->
+  <section class="panel" id="sec-students">
+    <h2>إدارة الطلاب</h2>
+    <p class="panel-desc">سجّل الطلاب واربطهم بالصفوف لمتابعة حضورهم ودرجاتهم.</p>
+    <div class="row">
+      <div class="field"><label>اسم الطالب</label><input id="stName" placeholder="الاسم الكامل"></div>
+      <div class="field"><label>الصف / الشعبة</label><select id="stClass"></select></div>
+      <div class="field"><label>الرقم التسلسلي</label><input id="stNo" placeholder="اختياري"></div>
+      <div class="field"><label>ولي الأمر</label><input id="stGuardian" placeholder="اختياري"></div>
+      <div class="field"><label>جوال ولي الأمر</label><input id="stPhone" placeholder="اختياري"></div>
+      <button class="btn" onclick="ViewsStudents.add()">➕ إضافة طالب</button>
+    </div>
+    <div class="stat-row">
+      <div class="field" style="max-width:280px"><input id="stSearch" placeholder="🔍 بحث بالاسم أو الرقم…" oninput="ViewsStudents.render()"></div>
+      <div class="field" style="max-width:200px"><select id="stFilter" onchange="ViewsStudents.render()"></select></div>
+      <button class="btn ghost" onclick="ViewsStudents.exportData()">⬇ تصدير CSV</button>
+    </div>
+    <div id="stCount"></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>#</th><th>الطالب</th><th>الصف/الشعبة</th><th>الرقم</th><th>نسبة الحضور</th><th>المتوسط</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+      <tbody id="stBody"></tbody>
+    </table></div>
+    <div id="stEmpty" class="empty">لا يوجد طلاب بعد — أضف أول طالب من الأعلى.</div>
+  </section>
+
+  <!-- ==================== الصفوف ==================== -->
+  <section class="panel" id="sec-classes">
+    <h2>الصفوف والشعب</h2>
+    <p class="panel-desc">نظّم الطلاب في صفوف وأشعب، وحدّد رائد الصف لكل شعبة.</p>
+    <div class="row">
+      <div class="field"><label>اسم الصف / الشعبة</label><input id="clName" placeholder="مثال: الأول أ"></div>
+      <div class="field"><label>المستوى</label><input id="clGrade" placeholder="مثال: الأول"></div>
+      <button class="btn" onclick="ViewsClasses.add()">➕ إضافة صف</button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>#</th><th>الصف / الشعبة</th><th>المستوى</th><th>العدد / السعة</th><th>رائد الصف</th><th>إجراءات</th></tr></thead>
+      <tbody id="clBody"></tbody>
+    </table></div>
+    <div id="clEmpty" class="empty">لا توجد صفوف بعد.</div>
+  </section>
+
+  <!-- ==================== المواد ==================== -->
+  <section class="panel" id="sec-subjects">
+    <h2>المواد الدراسية</h2>
+    <p class="panel-desc">عرّف المواد وحدّد الدرجة العظمى لكل مادة — تُستخدم لحساب النسب والتقديرات.</p>
+    <div class="row">
+      <div class="field"><label>اسم المادة</label><input id="subName" placeholder="مثال: رياضيات"></div>
+      <div class="field"><label>الرمز</label><input id="subCode" placeholder="اختياري"></div>
+      <div class="field"><label>الدرجة العظمى</label><input id="subMax" type="number" value="100" min="1"></div>
+      <div class="field"><label>الصف</label><select id="subClass"></select></div>
+      <button class="btn" onclick="ViewsSubjects.add()">➕ إضافة مادة</button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>#</th><th>المادة</th><th>الرمز</th><th>الدرجة العظمى</th><th>الصف</th><th>المعلم</th><th>عدد الدرجات</th><th>إجراءات</th></tr></thead>
+      <tbody id="subBody"></tbody>
+    </table></div>
+    <div id="subEmpty" class="empty">لا توجد مواد بعد.</div>
+  </section>
+
+  <!-- ==================== الحضور ==================== -->
+  <section class="panel" id="sec-attendance">
+    <h2>تسجيل الحضور والغياب</h2>
+    <p class="panel-desc">حدّد الحالة لكل طالب: حاضر، غائب، متأخر، أو بعذر — تُحفظ فوراً وتُزامن مع السحابة.</p>
+    <div class="row">
+      <div class="field"><label>التاريخ</label><input id="attDate" type="date"></div>
+      <div class="field"><label>الصف / الشعبة</label><select id="attFilter"></select></div>
+      <div class="field"><label>بحث</label><input id="attSearch" placeholder="اسم الطالب" oninput="ViewsAttendance.render()"></div>
+      <button class="btn ghost" onclick="ViewsAttendance.markAll('present')">✔ الكل حاضر</button>
+      <button class="btn ghost" onclick="ViewsAttendance.markAll('absent')">✘ الكل غائب</button>
+      <button class="btn danger" onclick="ViewsAttendance.fillAbsent()">⚠ من لم يُسجَّل = غائب</button>
+    </div>
+    <div class="sum-grid" id="attSummary"></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>الطالب</th><th>الصف/الشعبة</th><th>الحالة</th><th>نسبة الحضور</th><th>أيام الغياب</th></tr></thead>
+      <tbody id="attBody"></tbody>
+    </table></div>
+    <div id="attEmpty" class="empty">أضف طلاباً أولاً من تبويب «الطلاب».</div>
+  </section>
+
+  <!-- ==================== الدرجات ==================== -->
+  <section class="panel" id="sec-grades">
+    <h2>إدخال الدرجات</h2>
+    <p class="panel-desc">اكتب الدرجات (شفهي، مذاكرة، امتحان) — تُحسب الأعمال والمجموع تلقائياً. اضغط Enter أو غادر الحقل للحفظ.</p>
+    <div class="row">
+      <div class="field"><label>المادة</label><select id="grSubject" onchange="ViewsGrades.render()"></select></div>
+      <div class="field"><label>الصف / الشعبة</label><select id="grClass" onchange="ViewsGrades.render()"></select></div>
+      <div class="field"><label>الفصل</label><select id="grTerm" onchange="ViewsGrades.render()"></select></div>
+      <button class="btn" onclick="ViewsGrades.saveAll()">💾 حفظ الكل</button>
+      <button class="btn ghost" onclick="ViewsGrades.printReport()">🖨 طباعة الكشف</button>
+      <button class="btn ghost" onclick="ViewsGrades.exportData()">⬇ تصدير CSV</button>
+    </div>
+    <div class="sum-grid" id="grStats"></div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>الطالب</th>
+        <th>الصف/الشعبة</th>
+        <th>شفهي (100)</th>
+        <th>مذاكرة (100)</th>
+        <th>امتحان (100)</th>
+        <th>درجة الأعمال</th>
+        <th>المجموع النهائي</th>
+        <th>التقدير</th>
+      </tr></thead>
+      <tbody id="grBody"></tbody>
+    </table></div>
+    <div id="grEmpty" class="empty">اختر مادة لعرض درجات الطلاب.</div>
+  </section>
+
+  <!-- ==================== التقارير ==================== -->
+  <section class="panel" id="sec-reports">
+    <h2>التقارير والكشوف</h2>
+    <p class="panel-desc">كشوف جاهزة للطباعة والتسليم — اختر الشهر والصف ثم اطبع.</p>
+    <div class="row">
+      <div class="field"><label>الشهر</label><select id="rpMonth" onchange="ViewsReports.render()"></select></div>
+      <div class="field"><label>الصف / الشعبة</label><select id="rpClass" onchange="ViewsReports.render()"></select></div>
+    </div>
+    <div class="sum-grid" id="rpPreview"></div>
+    <div class="row">
+      <button class="btn" onclick="ViewsReports.monthlyAttendance()">🖨 كشف الحضور الشهري</button>
+      <button class="btn ghost" onclick="ViewsReports.studentList()">🖨 كشف بيانات الطلاب</button>
+      <button class="btn ghost" onclick="ViewsReports.subjectReport()">🖨 التقرير التحصيلي للمواد</button>
+      <button class="btn ghost" onclick="ViewsReports.exportMonth()">⬇ تصدير الحضور CSV</button>
+    </div>
+    <p class="hint">رموز الكشف الشهري: ✔ حاضر &nbsp; ✘ غائب &nbsp; ⏱ متأخر &nbsp; 📄 بعذر</p>
+  </section>
+
+  <!-- ==================== المستخدمون ==================== -->
+  <section class="panel" id="sec-users">
+    <h2>المستخدمون والصلاحيات</h2>
+    <p class="panel-desc">إدارة حسابات المعلمين والطلاب وأدوارهم. هذا التبويب متاح للمدير فقط.</p>
+    <div class="row">
+      <button class="btn" onclick="ViewsUsers.addUser()">➕ إضافة مستخدم</button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>الاسم</th><th>المعرّف</th><th>الدور</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+      <tbody id="usersBody"></tbody>
+    </table></div>
+    <h4>سجل التدقيق (آخر العمليات)</h4>
+    <div id="auditBody"></div>
+  </section>
+
+  <!-- ==================== الإعدادات ==================== -->
+  <section class="panel" id="sec-settings">
+    <h2>الإعدادات</h2>
+    <p class="panel-desc">بيانات المدرسة، النسخ الاحتياطي، والترحيل من النسخة القديمة.</p>
+    <div class="grid-2">
+      <div class="field"><label>اسم المدرسة</label><input id="setName"></div>
+      <div class="field"><label>السنة الدراسية</label><input id="setYear" placeholder="2026-2027"></div>
+      <div class="field"><label>الفصل الحالي</label><select id="setTerm"></select></div>
+      <div class="field"><label>هاتف المدرسة</label><input id="setPhone"></div>
+      <div class="field"><label>البريد الإلكتروني</label><input id="setEmail" dir="ltr"></div>
+      <div class="field"><label>العنوان</label><input id="setAddress"></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" onclick="ViewsSettings.save()">💾 حفظ الإعدادات</button>
+      <button class="btn ghost" onclick="ViewsSettings.syncNow()">🔄 مزامنة الآن</button>
+    </div>
+
+    <h4>النسخ الاحتياطي</h4>
+    <div class="row">
+      <button class="btn ghost" onclick="ViewsSettings.exportBackup()">⬇ تنزيل نسخة احتياطية (JSON)</button>
+      <label class="btn ghost" style="cursor:pointer">⬆ استيراد نسخة احتياطية
+        <input type="file" accept="application/json" style="display:none" onchange="ViewsSettings.importBackup(this)"></label>
+    </div>
+
+    <h4>الترحيل من النسخة السابقة</h4>
+    <p class="hint">إذا كان لديك تطبيق النسخة الأولى ببيانات في هذا الجهاز، انقلها الآن إلى النسخة الجديدة.</p>
+    <div class="row">
+      <button class="btn" onclick="ViewsSettings.migrateLegacy()">♻️ ترحيل البيانات القديمة</button>
+    </div>
+
+    <h4>حالة المزامنة</h4>
+    <div id="setSyncInfo"></div>
+
+    <h4>منطقة الخطر</h4>
+    <div class="row">
+      <button class="btn danger" onclick="ViewsSettings.clearLocal()">🗑 مسح البيانات المحلية</button>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- ==================== المكتبات ==================== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<!-- ==================== التطبيق ==================== -->
+<script src="js/config.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/views/dashboard.js"></script>
+<script src="js/views/students.js"></script>
+<script src="js/views/classes.js"></script>
+<script src="js/views/subjects.js"></script>
+<script src="js/views/attendance.js"></script>
+<script src="js/views/grades.js"></script>
+<script src="js/views/reports.js"></script>
+<script src="js/views/users.js"></script>
+<script src="js/views/settings.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>من نحن — نظام إدارة المدرسة</title>
+<meta name="theme-color" content="#2563eb">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header>
+  <div class="head-row">
+    <div class="brand">
+      <div class="logo">🏫</div>
+      <div>
+        <h1>من نحن</h1>
+        <p>نظام إدارة المدرسة — الحل المتكامل لإدارة مدرستك</p>
+      </div>
+    </div>
+    <div class="head-actions">
+      <a class="btn ghost" href="index.html" style="background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.25)">→ رجوع للتطبيق</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="panel show">
+    <h2>عن النظام</h2>
+    <p class="panel-desc">
+      نظام إدارة مدرسة يعمل كتطبيق ويب قابل للتثبيت على الهاتف والحاسوب (PWA)،
+      مصمّم ليعمل بالكامل دون إنترنت، ومع ذلك يزامن بياناتك تلقائياً مع
+      <b>Supabase</b> عند توفر الاتصال.
+    </p>
+
+    <h4>المزايا</h4>
+    <div class="stats-grid">
+      <div class="stat-card" style="--accent:var(--primary)">
+        <div class="stat-icon">👨‍🎓</div>
+        <div class="stat-body"><div class="stat-label">إدارة الطلاب</div>
+        <div class="stat-sub">ملف كامل لكل طالب: بيانات، ولي الأمر، حضور، درجات</div></div>
+      </div>
+      <div class="stat-card" style="--accent:var(--green)">
+        <div class="stat-icon">🏫</div>
+        <div class="stat-body"><div class="stat-label">الصفوف والمواد</div>
+        <div class="stat-sub">شعب، رائد صف، مواد بدرجات عظمى مرنة</div></div>
+      </div>
+      <div class="stat-card" style="--accent:var(--amber)">
+        <div class="stat-icon">📅</div>
+        <div class="stat-body"><div class="stat-label">الحضور والغياب</div>
+        <div class="stat-sub">حاضر / غائب / متأخر / بعذر مع ملخص اليوم</div></div>
+      </div>
+      <div class="stat-card" style="--accent:var(--purple)">
+        <div class="stat-icon">📝</div>
+        <div class="stat-body"><div class="stat-label">الدرجات</div>
+        <div class="stat-sub">حفظ تلقائي، تقديرات، كشف طباعة، تصدير CSV</div></div>
+      </div>
+    </div>
+
+    <h4>كيف تعمل المزامنة؟</h4>
+    <ul style="line-height:2;font-size:14px">
+      <li>كل تعديل يُحفظ فوراً في <b>الذاكرة المحلية</b> على جهازك (يعمل بدون إنترنت).</li>
+      <li>تُضاف العملية إلى <b>طابور مزامنة</b>، ثم تُرفع إلى <b>Supabase</b> تلقائياً.</li>
+      <li>عند عودة الاتصال تُفرَّغ الطابور، وعند فتح التطبيق من جهاز آخر تُحمَّل البيانات الأحدث.</li>
+      <li>صلاحيات الوصول محمية على مستوى <b>كل صف في قاعدة البيانات</b> عبر سياسات RLS.</li>
+    </ul>
+
+    <h4>الأدوار</h4>
+    <ul style="line-height:2;font-size:14px">
+      <li><b>مدير</b> — صلاحية كاملة: الطلاب، الصفوف، المستخدمون، الإعدادات، سجل التدقيق.</li>
+      <li><b>معلم</b> — إدخال الحضور والدرجات، وعرض بيانات طلاب صفه.</li>
+      <li><b>طالب</b> — عرض درجاته وحضوره فقط.</li>
+    </ul>
+
+    <h4>خصوصية البيانات</h4>
+    <p style="font-size:14px;line-height:1.9">
+      جميع البيانات تُحفظ في مشروع Supabase الخاص بك أنت — لا يمرّ أيّ خادم وسيط.
+      مفتاح <code>anon</code> المضمّن في الواجهة آمن للنشر لأن الحماية الفعلية
+      مطبَّقة في سياسات <b>Row Level Security</b> داخل قاعدة البيانات.
+      يوصى بتشغيل خيار «تأكيد البريد» وإضافة سياسات إضافية حسب الحاجة.
+    </p>
+  </section>
+</main>
+
+</body>
+</html>
